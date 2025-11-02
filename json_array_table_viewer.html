@@ -279,6 +279,35 @@
                       {loading ? 'Loading...' : 'Load'}
                     </button>
                   </div>
+                  <div className="mt-2 text-xs text-gray-600">
+                    <p className="mb-1">Sample URLs:</p>
+                    <ul className="space-y-1 ml-2">
+                      <li>
+                        <a
+                          href="https://www.genesis.com/bin/api/v2/inventory/search?model=gv60&zip=50001&radius=4000&maxdealers=500"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setUrlInput('https://www.genesis.com/bin/api/v2/inventory/search?model=gv60&zip=50001&radius=4000&maxdealers=500');
+                          }}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Retrieve Genesis GV60 new inventory
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="https://www.genesis.com/us/en/cpo/services/certifiedinventory.js?model=gv60&type=inventory"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setUrlInput('https://www.genesis.com/us/en/cpo/services/certifiedinventory.js?model=gv60&type=inventory');
+                          }}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Retrieve Genesis GV60 Certified (used) inventory
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
 
                 <div className="text-center text-gray-500">or</div>
