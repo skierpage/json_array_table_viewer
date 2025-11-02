@@ -48,7 +48,17 @@
 
         if (Array.isArray(obj)) {
           if (obj.length > 0 && typeof obj[0] === 'object' && !Array.isArray(obj[0])) {
-            arrays.push({ path: path || 'root', data: obj, count: obj.length });
+            // Check if this is a wrapped array (each element has a single property containing the actual data)
+            const firstElement = obj[0];
+            const keys = Object.keys(firstElement);
+
+            if (keys.length === 1 && typeof firstElement[keys[0]] === 'object' && !Array.isArray(firstElement[keys[0]])) {
+              // This looks like a wrapped array - unwrap it
+              const unwrapped = obj.map(item => item[keys[0]]);
+              arrays.push({ path: path || 'root', data: unwrapped, count: unwrapped.length });
+            } else {
+              arrays.push({ path: path || 'root', data: obj, count: obj.length });
+            }
           }
         } else if (obj && typeof obj === 'object') {
           Object.entries(obj).forEach(([key, value]) => {
