@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Genesis Inventory Viewer</title>
+  <title>JSON Array Viewer</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -30,11 +30,65 @@
       </svg>
     );
 
-    function GenesisInventoryViewer() {
+    function JsonArrayViewer() {
+      const [rawData, setRawData] = useState(null);
+      const [availableArrays, setAvailableArrays] = useState([]);
+      const [selectedArrayPath, setSelectedArrayPath] = useState(null);
       const [data, setData] = useState([]);
       const [searchTerm, setSearchTerm] = useState('');
       const [filters, setFilters] = useState({});
       const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+      const [sourceInfo, setSourceInfo] = useState('');
+      const [urlInput, setUrlInput] = useState('');
+      const [loading, setLoading] = useState(false);
+
+      // Recursively find all arrays in the JSON data
+      const findArrays = (obj, path = '') => {
+        const arrays = [];
+
+        if (Array.isArray(obj)) {
+          if (obj.length > 0 && typeof obj[0] === 'object' && !Array.isArray(obj[0])) {
+            arrays.push({ path: path || 'root', data: obj, count: obj.length });
+          }
+        } else if (obj && typeof obj === 'object') {
+          Object.entries(obj).forEach(([key, value]) => {
+            const newPath = path ? `${path}.${key}` : key;
+            arrays.push(...findArrays(value, newPath));
+          });
+        }
+
+        return arrays;
+      };
+
+      const processJsonData = (json, source) => {
+        setRawData(json);
+        setSourceInfo(source);
+
+        const arrays = findArrays(json);
+
+        if (arrays.length === 0) {
+          alert('No arrays found in the JSON data');
+          return;
+        }
+
+        if (arrays.length === 1) {
+          // Only one array found, use it directly
+          setData(arrays[0].data);
+          setSelectedArrayPath(arrays[0].path);
+          setAvailableArrays([]);
+        } else {
+          // Multiple arrays found, show selection UI
+          setAvailableArrays(arrays);
+          setData([]);
+          setSelectedArrayPath(null);
+        }
+      };
+
+      const handleArraySelection = (arrayInfo) => {
+        setData(arrayInfo.data);
+        setSelectedArrayPath(arrayInfo.path);
+        setAvailableArrays([]);
+      };
 
       const handleFileUpload = (event) => {
         const file = event.target.files[0];
@@ -43,8 +97,7 @@
           reader.onload = (e) => {
             try {
               const json = JSON.parse(e.target.result);
-              const arrayData = Array.isArray(json) ? json : [json];
-              setData(arrayData);
+              processJsonData(json, `File: ${file.name}`);
             } catch (error) {
               alert('Error parsing JSON: ' + error.message);
             }
@@ -57,12 +110,32 @@
         navigator.clipboard.readText().then(text => {
           try {
             const json = JSON.parse(text);
-            const arrayData = Array.isArray(json) ? json : [json];
-            setData(arrayData);
+            processJsonData(json, 'Clipboard');
           } catch (error) {
             alert('Error parsing JSON from clipboard: ' + error.message);
           }
         });
+      };
+
+      const handleUrlLoad = async () => {
+        if (!urlInput.trim()) {
+          alert('Please enter a URL');
+          return;
+        }
+
+        setLoading(true);
+        try {
+          const response = await fetch(urlInput);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const json = await response.json();
+          processJsonData(json, `URL: ${urlInput}`);
+        } catch (error) {
+          alert('Error loading URL: ' + error.message);
+        } finally {
+          setLoading(false);
+        }
       };
 
       const columns = useMemo(() => {
@@ -133,13 +206,83 @@
         setSearchTerm('');
       };
 
+      const resetApp = () => {
+        setRawData(null);
+        setAvailableArrays([]);
+        setSelectedArrayPath(null);
+        setData([]);
+        setSourceInfo('');
+        setSearchTerm('');
+        setFilters({});
+        setSortConfig({ key: null, direction: 'asc' });
+      };
+
+      // Show array selection UI if multiple arrays are available
+      if (availableArrays.length > 0) {
+        return (
+          <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-8">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
+              <h1 className="text-2xl font-bold mb-4">Select Array to Display</h1>
+              <p className="text-sm text-gray-600 mb-6">Loaded {sourceInfo}</p>
+              <p className="text-sm text-gray-700 mb-4">Found the following arrays:</p>
+
+              <div className="space-y-2">
+                {availableArrays.map((arrayInfo, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleArraySelection(arrayInfo)}
+                    className="w-full text-left p-4 border rounded hover:bg-blue-50 hover:border-blue-500 transition"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-sm">{arrayInfo.path}</span>
+                      <span className="text-gray-600 text-sm">({arrayInfo.count} rows)</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={resetApp}
+                className="mt-6 w-full py-2 px-4 border rounded hover:bg-gray-100 transition"
+              >
+                Load Different Data
+              </button>
+            </div>
+          </div>
+        );
+      }
+
       if (data.length === 0) {
         return (
-          <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-8">
+          <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-8">
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-              <h1 className="text-2xl font-bold mb-6 text-center">Genesis Inventory Viewer</h1>
-              
+              <h1 className="text-2xl font-bold mb-6 text-center">JSON Array Viewer</h1>
+
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Load from URL</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleUrlLoad()}
+                      placeholder="https://example.com/data.json"
+                      className="flex-1 px-3 py-2 border rounded text-sm"
+                      disabled={loading}
+                    />
+                    <button
+                      onClick={handleUrlLoad}
+                      disabled={loading}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-400"
+                    >
+                      {loading ? 'Loading...' : 'Load'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-center text-gray-500">or</div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Upload JSON File</label>
                   <input
@@ -149,9 +292,9 @@
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                 </div>
-                
+
                 <div className="text-center text-gray-500">or</div>
-                
+
                 <button
                   onClick={handlePaste}
                   className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
@@ -168,12 +311,17 @@
         <div className="h-screen flex flex-col bg-gray-50">
           <div className="bg-white shadow-sm p-4 border-b">
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-bold">Genesis Inventory ({filteredAndSortedData.length} of {data.length} vehicles)</h1>
+              <div>
+                <h1 className="text-xl font-bold">
+                  {selectedArrayPath} ({filteredAndSortedData.length} of {data.length} rows)
+                </h1>
+                <p className="text-xs text-gray-600 mt-1">{sourceInfo}</p>
+              </div>
               <button
-                onClick={() => setData([])}
+                onClick={resetApp}
                 className="text-sm text-gray-600 hover:text-gray-800"
               >
-                Load Different File
+                Load Different Data
               </button>
             </div>
             
@@ -253,7 +401,7 @@
     }
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<GenesisInventoryViewer />);
+    root.render(<JsonArrayViewer />);
   </script>
 </body>
 </html>
