@@ -106,15 +106,19 @@
         }
       };
 
-      const handlePaste = () => {
-        navigator.clipboard.readText().then(text => {
+      const handlePaste = async () => {
+        try {
+          const text = await navigator.clipboard.readText();
           try {
             const json = JSON.parse(text);
             processJsonData(json, 'Clipboard');
           } catch (error) {
             alert('Error parsing JSON from clipboard: ' + error.message);
           }
-        });
+        } catch (error) {
+          // Clipboard access denied or failed
+          alert('Unable to access clipboard. Please make sure you have granted clipboard permissions, or try uploading a file instead.');
+        }
       };
 
       const handleUrlLoad = async () => {
@@ -132,7 +136,10 @@
           const json = await response.json();
           processJsonData(json, `URL: ${urlInput}`);
         } catch (error) {
-          alert('Error loading URL: ' + error.message);
+          const errorMsg = error.message.includes('fetch') || error.message.includes('NetworkError')
+            ? 'Error loading URL: CORS policy blocked this request.\n\nTo load this URL:\n1. Right-click the link and "Copy Link"\n2. Open the URL directly in a new browser tab\n3. Copy the JSON response\n4. Use "Paste JSON from Clipboard" below'
+            : 'Error loading URL: ' + error.message;
+          alert(errorMsg);
         } finally {
           setLoading(false);
         }
@@ -324,12 +331,15 @@
 
                 <div className="text-center text-gray-500">or</div>
 
-                <button
-                  onClick={handlePaste}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
-                >
-                  Paste JSON from Clipboard
-                </button>
+                <div>
+                  <button
+                    onClick={handlePaste}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+                  >
+                    Paste JSON from Clipboard
+                  </button>
+                  <p className="mt-1 text-xs text-gray-500 text-center">If a "Paste" tooltip appears, click it.</p>
+                </div>
               </div>
             </div>
           </div>
