@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Genesis Inventory Viewer</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    // Simple icon components
+    const Search = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+      </svg>
+    );
+
+    const X = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    );
+
+    function GenesisInventoryViewer() {
+      const [data, setData] = useState([]);
+      const [searchTerm, setSearchTerm] = useState('');
+      const [filters, setFilters] = useState({});
+      const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+      const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const json = JSON.parse(e.target.result);
+              const arrayData = Array.isArray(json) ? json : [json];
+              setData(arrayData);
+            } catch (error) {
+              alert('Error parsing JSON: ' + error.message);
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+
+      const handlePaste = () => {
+        navigator.clipboard.readText().then(text => {
+          try {
+            const json = JSON.parse(text);
+            const arrayData = Array.isArray(json) ? json : [json];
+            setData(arrayData);
+          } catch (error) {
+            alert('Error parsing JSON from clipboard: ' + error.message);
+          }
+        });
+      };
+
+      const columns = useMemo(() => {
+        if (data.length === 0) return [];
+        const allKeys = new Set();
+        data.forEach(row => {
+          Object.keys(row).forEach(key => allKeys.add(key));
+        });
+        return Array.from(allKeys);
+      }, [data]);
+
+      const uniqueValues = useMemo(() => {
+        const values = {};
+        columns.forEach(col => {
+          values[col] = [...new Set(data.map(row => row[col]).filter(v => v !== null && v !== undefined))];
+        });
+        return values;
+      }, [data, columns]);
+
+      const filteredAndSortedData = useMemo(() => {
+        let filtered = data.filter(row => {
+          const matchesSearch = searchTerm === '' || 
+            Object.values(row).some(val => 
+              String(val).toLowerCase().includes(searchTerm.toLowerCase())
+            );
+          
+          const matchesFilters = Object.entries(filters).every(([key, value]) => {
+            if (!value || value === '') return true;
+            return String(row[key]) === String(value);
+          });
+          
+          return matchesSearch && matchesFilters;
+        });
+
+        if (sortConfig.key) {
+          filtered.sort((a, b) => {
+            const aVal = a[sortConfig.key];
+            const bVal = b[sortConfig.key];
+            
+            if (aVal === bVal) return 0;
+            if (aVal === null || aVal === undefined) return 1;
+            if (bVal === null || bVal === undefined) return -1;
+            
+            const comparison = aVal < bVal ? -1 : 1;
+            return sortConfig.direction === 'asc' ? comparison : -comparison;
+          });
+        }
+
+        return filtered;
+      }, [data, searchTerm, filters, sortConfig]);
+
+      const handleSort = (key) => {
+        setSortConfig(prev => ({
+          key,
+          direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+        }));
+      };
+
+      const handleFilterChange = (column, value) => {
+        setFilters(prev => ({
+          ...prev,
+          [column]: value
+        }));
+      };
+
+      const clearFilters = () => {
+        setFilters({});
+        setSearchTerm('');
+      };
+
+      if (data.length === 0) {
+        return (
+          <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-8">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+              <h1 className="text-2xl font-bold mb-6 text-center">Genesis Inventory Viewer</h1>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Upload JSON File</label>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileUpload}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                </div>
+                
+                <div className="text-center text-gray-500">or</div>
+                
+                <button
+                  onClick={handlePaste}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+                >
+                  Paste JSON from Clipboard
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="h-screen flex flex-col bg-gray-50">
+          <div className="bg-white shadow-sm p-4 border-b">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-xl font-bold">Genesis Inventory ({filteredAndSortedData.length} of {data.length} vehicles)</h1>
+              <button
+                onClick={() => setData([])}
+                className="text-sm text-gray-600 hover:text-gray-800"
+              >
+                Load Different File
+              </button>
+            </div>
+            
+            <div className="flex gap-2 items-center">
+              <div className="relative flex-1">
+                <div className="absolute left-3 top-2.5 text-gray-400">
+                  <Search />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search all fields..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border rounded"
+                />
+              </div>
+              {(Object.keys(filters).length > 0 || searchTerm) && (
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-1"
+                >
+                  <X />
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto">
+            <table className="w-full border-collapse bg-white">
+              <thead className="sticky top-0 bg-gray-100 border-b">
+                <tr>
+                  {columns.map(col => (
+                    <th key={col} className="text-left p-2 border-r">
+                      <div className="flex flex-col gap-1">
+                        <button
+                          onClick={() => handleSort(col)}
+                          className="font-semibold text-sm hover:bg-gray-200 p-1 rounded text-left"
+                        >
+                          {col}
+                          {sortConfig.key === col && (
+                            <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </button>
+                        {uniqueValues[col].length <= 50 && (
+                          <select
+                            value={filters[col] || ''}
+                            onChange={(e) => handleFilterChange(col, e.target.value)}
+                            className="text-xs border rounded p-1 w-full"
+                          >
+                            <option value="">All</option>
+                            {uniqueValues[col].sort().map(val => (
+                              <option key={val} value={val}>{String(val)}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAndSortedData.map((row, idx) => (
+                  <tr key={idx} className="border-b hover:bg-gray-50">
+                    {columns.map(col => (
+                      <td key={col} className="p-2 border-r text-sm">
+                        {typeof row[col] === 'object' ? JSON.stringify(row[col]) : String(row[col] ?? '')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<GenesisInventoryViewer />);
+  </script>
+</body>
+</html>
