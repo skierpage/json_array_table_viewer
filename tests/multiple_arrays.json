@@ -1,0 +1,14 @@
+{
+  "Comments": [
+    {
+      "Note": "'Vehicles' is a wrapped array, these (Comments) aren't"
+    },
+    {
+      "Note": "Example adapted from README.md"
+    }
+  ],
+  "Vehicles": [
+    { "Veh": { "vin": "123", "model": "GV60" } },
+    { "Veh": { "vin": "456", "model": "GV70" } }
+  ]
+}
