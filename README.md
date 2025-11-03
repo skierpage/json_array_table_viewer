@@ -1,5 +1,8 @@
 # JSON Array Viewer
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![GitHub](https://img.shields.io/badge/Fork%20me%20on-GitHub-blue?logo=github)](https://github.com/skierpage/json_array_table_viewer)
+
 A simple, single-file web application for viewing and exploring JSON data in a tabular format. Load JSON from a URL, file, or clipboard, and view arrays as sortable, filterable tables.
 
 ## Features
@@ -124,8 +127,10 @@ When loading from URLs, some APIs may block requests due to CORS (Cross-Origin R
 
 ## License
 
-MIT License - feel free to use, modify, and distribute.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
 Issues and pull requests welcome at https://github.com/skierpage/json_array_table_viewer
+
+[![Fork me on GitHub](https://img.shields.io/badge/Fork%20me%20on-GitHub-blue?logo=github)](https://github.com/skierpage/json_array_table_viewer)
