@@ -5,6 +5,9 @@
 
 A simple, single-file web application for viewing and exploring JSON data in a tabular format. Load JSON from a URL, file, or clipboard, and view arrays as sortable, filterable tables.
 
+Claude Code built this for me when I got frustrated trying to find a Genesis GV60 car.
+Genesis' web site filters a big JSON array of vehicles, but limits what I can search on.
+
 ## Features
 
 - **Multiple Data Sources**
@@ -54,7 +57,8 @@ Visit the hosted version at: `https://skierpage.github.io/json_array_table_viewe
 **From Clipboard:**
 - Copy JSON to your clipboard
 - Click "Paste JSON from Clipboard"
-- If a "Paste" tooltip appears (browser security), click it to grant permission
+- Note: your browser may block a paste action for browser security.
+  Either grant clipboard access, or if a "Paste" tooltip appears, click it to authorize the operation.
 
 ### Viewing Data
 
