@@ -35,9 +35,7 @@ Genesis' web site filters a big JSON array of vehicles, but limits what I can se
 
 ### Option 1: Use Online
 
-Visit the hosted version at: `https://skierpage.github.io/json_array_table_viewer/json_array_table_viewer.html`
-
-*(You'll need to enable GitHub Pages in your repository settings for this to work)*
+Visit the hosted version on [my GitHub pages](https://skierpage.github.io/json_array_table_viewer/json_array_table_viewer.html)
 
 ### Option 2: Use Locally
 
