@@ -399,21 +399,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       return (
         <div className="h-screen flex flex-col bg-gray-50">
           <div className="bg-white shadow-sm p-4 border-b">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-xl font-bold">
-                  {selectedArrayPath} ({filteredAndSortedData.length} of {data.length} rows)
-                </h1>
-                <p className="text-xs text-gray-600 mt-1">{sourceInfo}</p>
-              </div>
-              <button
-                onClick={resetApp}
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
-                Load Different Data
-              </button>
+            <div className="mb-4">
+              <h1 className="text-xl font-bold">
+                {selectedArrayPath} ({filteredAndSortedData.length} of {data.length} rows)
+              </h1>
+              <p className="text-xs text-gray-600 mt-1">{sourceInfo}</p>
             </div>
-            
+
             <div className="flex gap-2 items-center">
               <div className="relative flex-1">
                 <div className="absolute left-3 top-2.5 text-gray-400">
@@ -436,6 +428,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                   Clear
                 </button>
               )}
+              <button
+                onClick={resetApp}
+                className="px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded text-sm whitespace-nowrap"
+              >
+                Load Different Data
+              </button>
             </div>
           </div>
 
