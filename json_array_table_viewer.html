@@ -171,25 +171,50 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         }
       };
 
-      const handleUrlLoad = async () => {
+      const handleUrlLoad = async (useProxy = false) => {
         if (!urlInput.trim()) {
           alert('Please enter a URL');
           return;
         }
 
+        console.log('handleUrlLoad called with useProxy:', useProxy);
         setLoading(true);
         try {
-          const response = await fetch(urlInput);
+          const fetchUrl = useProxy
+            ? `https://api.allorigins.win/raw?url=${encodeURIComponent(urlInput)}`
+            : urlInput;
+
+          console.log('Fetching:', fetchUrl);
+          const response = await fetch(fetchUrl);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           const json = await response.json();
-          processJsonData(json, `URL: ${urlInput}`);
+          const sourceLabel = useProxy ? `URL: ${urlInput} (using a proxy)` : `URL: ${urlInput}`;
+          processJsonData(json, sourceLabel);
         } catch (error) {
-          const errorMsg = error.message.includes('fetch') || error.message.includes('NetworkError')
-            ? 'Error loading URL: CORS policy blocked this request.\n\nTo load this URL:\n1. Right-click the link and "Copy Link"\n2. Open the URL directly in a new browser tab\n3. Copy the JSON response\n4. Use "Paste JSON from Clipboard" below'
-            : 'Error loading URL: ' + error.message;
-          alert(errorMsg);
+          console.log('Error caught:', error.message, 'useProxy was:', useProxy);
+          const isCorsError = error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('CORS');
+
+          if (isCorsError && !useProxy) {
+            // Offer to retry with proxy
+            console.log('CORS error detected, showing confirmation dialog');
+            const useProxyChoice = confirm(
+              'Error loading URL: CORS policy blocked this request.\n\n' +
+              'Would you like to try using a CORS proxy?\n\n' +
+              'WARNING: Third-party proxies can see and potentially modify the data being transferred. ' +
+              'Only use this if you trust the proxy service (allorigins.win).\n\n' +
+              'Alternative: Click Cancel, then right-click the URL link, open it in a new tab, copy the JSON, and use "Paste JSON from Clipboard".'
+            );
+
+            if (useProxyChoice) {
+              console.log('User accepted proxy, retrying with useProxy=true');
+              handleUrlLoad(true);
+              return;
+            }
+          } else {
+            alert('Error loading URL: ' + error.message);
+          }
         } finally {
           setLoading(false);
         }
@@ -329,7 +354,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                       disabled={loading}
                     />
                     <button
-                      onClick={handleUrlLoad}
+                      onClick={() => handleUrlLoad()}
                       disabled={loading}
                       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-400"
                     >
